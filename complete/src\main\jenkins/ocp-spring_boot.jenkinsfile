@@ -1,0 +1,115 @@
+def templateName = 'gs-spring-boot'
+//def templatePath = 'redhat-openjdk18-openshift:1.8~https://github.com/2002batman/spring-boot-api-example.git'
+def templatePath = 'https://github.com/2002batman/gs-spring-boot.git'
+
+pipeline {
+   agent {
+       node {
+           label 'maven'
+       }
+
+   }
+
+
+   options {
+        // set a timeout of 20 minutes for this pipeline
+        timeout(time: 20, unit: 'MINUTES')
+    }
+    
+    stages {
+        stage ( 'preamble' ) {
+        	steps {
+        	    script {
+        	        openshift.withCluster () {
+        	        	openshift.withProject() {
+        	        	    echo "using project: ${openshift.project()}"
+    	        	    }
+    	        	}
+				}
+    	    }
+    	}
+    	
+		stage('cleanup') {
+			steps {
+				script {
+					openshift.withCluster() {
+						openshift.withProject() {
+							openshift.selector("all", [ template : templateName ]).delete() 
+							if (openshift.selector("secrets", templateName).exists()) { 
+								openshift.selector("secrets", templateName).delete()
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		stage('create') {
+			steps {
+				script {
+					openshift.withCluster() {
+						openshift.withProject() {
+							openshift.newApp(templatePath) 
+						}
+					}
+				}
+			}
+		}		
+		
+//		stage('build maven'){
+//		    steps{
+//		        gradle{
+//		            tasks('clean')
+//		            tasks('build')
+//		        }
+//		    }
+//		}
+
+//		stage('build oc'){
+//		    steps{
+//		        gradle{
+//		            tasks('clean')
+//		            tasks('build')
+//		        }
+//		    }
+//		}
+
+//		stage('create') {
+//			when {
+//				expression {
+//					openshift.withCluster() {
+//						return !openshift.selector ( 'bc', templateName ).exists();
+//	      			}
+//	    		}
+//	  		}
+//	  		
+//			steps {
+//				script {
+//					openshift.withCluster() {
+//						openshift.withProject() {
+//							openshift.newApp(templatePath) 
+//						}
+//					}
+//				}
+//			}
+//		}	
+//    }
+
+		stage('build') {
+			steps {
+				script {
+					openshift.withCluster() {
+						openshift.withProject() {
+							def builds = openshift.selector("bc", templateName).related('builds')
+								timeout(5) { 
+								builds.untilEach(1) {
+								return (it.object().status.phase == "Complete")
+								}
+							}
+						}
+					}
+				}
+			}
+		}	
+	}
+}
