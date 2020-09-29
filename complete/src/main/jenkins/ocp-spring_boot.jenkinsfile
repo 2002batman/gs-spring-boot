@@ -1,6 +1,6 @@
-def templateName = 'gs-spring-boot'
+def APP_NAME = 'gs-spring-boot'
 //def templatePath = 'redhat-openjdk18-openshift:1.8~https://github.com/2002batman/spring-boot-api-example.git'
-def OCP_BUILD_CMD = 'java~https://github.com/2002batman/gs-spring-boot.git --context-dir=complete'
+def OCP_BUILD_S2I = 'java~https://github.com/2002batman/gs-spring-boot.git --context-dir=complete'
 
 pipeline {
    agent {
@@ -34,9 +34,9 @@ pipeline {
 				script {
 					openshift.withCluster() {
 						openshift.withProject() {
-							openshift.selector("all", [ template : templateName ]).delete() 
-							if (openshift.selector("secrets", templateName).exists()) { 
-								openshift.selector("secrets", templateName).delete()
+							openshift.selector("all", [ template : APP_NAME ]).delete() 
+							if (openshift.selector("secrets", APP_NAME).exists()) { 
+								openshift.selector("secrets", APP_NAME).delete()
 							}
 						}
 					}
@@ -49,7 +49,7 @@ pipeline {
 //				script {
 //					openshift.withCluster() {
 //						openshift.withProject() {
-//							openshift.newApp(OCP_BUILD_CMD) 
+//							openshift.newApp(OCP_BUILD_S2I) 
 //						}
 //					}
 //				}
@@ -78,7 +78,7 @@ pipeline {
 			when {
 				expression {
 					openshift.withCluster() {
-						return !openshift.selector ( 'bc', OCP_BUILD_CMD ).exists();
+						return !openshift.selector ( 'bc', APP_NAME ).exists();
 	      			}
 	    		}
 	  		}
@@ -87,7 +87,7 @@ pipeline {
 				script {
 					openshift.withCluster() {
 						openshift.withProject() {
-							openshift.newApp(OCP_BUILD_CMD) 
+							openshift.newApp(OCP_BUILD_S2I) 
 						}
 					}
 				}
@@ -99,7 +99,7 @@ pipeline {
 				script {
 					openshift.withCluster() {
 						openshift.withProject() {
-							def builds = openshift.selector("bc", templateName).related('builds')
+							def builds = openshift.selector("bc", APP_NAME).related('builds')
 								timeout(5) { 
 								builds.untilEach(1) {
 								return (it.object().status.phase == "Complete")
