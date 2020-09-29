@@ -1,6 +1,6 @@
 def templateName = 'gs-spring-boot'
 //def templatePath = 'redhat-openjdk18-openshift:1.8~https://github.com/2002batman/spring-boot-api-example.git'
-def templatePath = 'java~https://github.com/2002batman/gs-spring-boot.git --context-dir=complete'
+def OCP_BUILD_CMD = 'java~https://github.com/2002batman/gs-spring-boot.git --context-dir=complete'
 
 pipeline {
    agent {
@@ -44,17 +44,17 @@ pipeline {
 			}
 		}
 		
-		stage('create') {
-			steps {
-				script {
-					openshift.withCluster() {
-						openshift.withProject() {
-							openshift.newApp(templatePath) 
-						}
-					}
-				}
-			}
-		}		
+//		stage('create') {
+//			steps {
+//				script {
+//					openshift.withCluster() {
+//						openshift.withProject() {
+//							openshift.newApp(OCP_BUILD_CMD) 
+//						}
+//					}
+//				}
+//			}
+//		}		
 		
 //		stage('build maven'){
 //		    steps{
@@ -74,26 +74,25 @@ pipeline {
 //		    }
 //		}
 
-//		stage('create') {
-//			when {
-//				expression {
-//					openshift.withCluster() {
-//						return !openshift.selector ( 'bc', templateName ).exists();
-//	      			}
-//	    		}
-//	  		}
-//	  		
-//			steps {
-//				script {
-//					openshift.withCluster() {
-//						openshift.withProject() {
-//							openshift.newApp(templatePath) 
-//						}
-//					}
-//				}
-//			}
-//		}	
-//    }
+		stage('create') {
+			when {
+				expression {
+					openshift.withCluster() {
+						return !openshift.selector ( 'bc', OCP_BUILD_CMD ).exists();
+	      			}
+	    		}
+	  		}
+	  		
+			steps {
+				script {
+					openshift.withCluster() {
+						openshift.withProject() {
+							openshift.newApp(OCP_BUILD_CMD) 
+						}
+					}
+				}
+			}
+		}	
 
 		stage('build') {
 			steps {
