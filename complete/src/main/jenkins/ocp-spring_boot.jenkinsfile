@@ -56,24 +56,6 @@ pipeline {
 //			}
 //		}		
 		
-//		stage('build maven'){
-//		    steps{
-//		        gradle{
-//		            tasks('clean')
-//		            tasks('build')
-//		        }
-//		    }
-//		}
-
-//		stage('build oc'){
-//		    steps{
-//		        gradle{
-//		            tasks('clean')
-//		            tasks('build')
-//		        }
-//		    }
-//		}
-
 		stage('create') {
 //			when {
 //				expression {
